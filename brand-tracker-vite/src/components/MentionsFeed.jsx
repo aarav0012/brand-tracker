@@ -11,7 +11,7 @@ const MentionsFeed = ({ mentions }) => {
     }));
   };
 
-  const truncateText = (text, maxLength = 200) => {
+  const truncateText = (text = "", maxLength = 200) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
@@ -25,13 +25,15 @@ const MentionsFeed = ({ mentions }) => {
     }}>
       <h3 style={{ marginBottom: '20px', fontSize: '1.3rem' }}>Recent Mentions</h3>
       <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-        {mentions.map((mention) => {
-          const isExpanded = expandedPosts[mention.id];
-          const shouldTruncate = mention.text.length > 200;
+        {mentions.map((mention, index) => {
+          const uniqueId = mention.id || mention.url || index;
+          const isExpanded = expandedPosts[uniqueId]
+          const text = mention.text ?? "";
+          const shouldTruncate = text.length > 200;
 
           return (
             <div
-              key={mention.id}
+              key={uniqueId}
               style={{
                 background: '#0f172a',
                 padding: '20px',
@@ -40,6 +42,7 @@ const MentionsFeed = ({ mentions }) => {
                 borderLeft: `4px solid ${SENTIMENT_COLORS[mention.sentiment]}`
               }}
             >
+              {/* Header */}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -58,6 +61,7 @@ const MentionsFeed = ({ mentions }) => {
                   }}>
                     {mention.sentiment.toUpperCase()}
                   </span>
+                  {/* SubReddit */}
                   {mention.subreddit && (
                     <span style={{
                       padding: '4px 12px',
@@ -70,6 +74,7 @@ const MentionsFeed = ({ mentions }) => {
                       r/{mention.subreddit}
                     </span>
                   )}
+                  {/* Translated Tag */}
                   {mention.wasTranslated && (
                     <span style={{
                       padding: '4px 12px',
@@ -83,12 +88,15 @@ const MentionsFeed = ({ mentions }) => {
                     </span>
                   )}
                 </div>
+
+                {/* Source + Time */}
                 <div style={{ textAlign: 'right', fontSize: '0.85rem', color: '#94a3b8' }}>
                   <div>{mention.source}</div>
                   <div>{formatTime(mention.timestamp)}</div>
                 </div>
               </div>
 
+              {/* Text */}
               <p style={{ 
                 color: '#e2e8f0', 
                 lineHeight: '1.6', 
@@ -96,12 +104,13 @@ const MentionsFeed = ({ mentions }) => {
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word'
               }}>
-                {isExpanded ? mention.text : truncateText(mention.text)}
+                {isExpanded ? text : truncateText(text)}
               </p>
 
+              {/* Read More / Show Less */}
               {shouldTruncate && (
                 <button
-                  onClick={() => toggleExpand(mention.id)}
+                  onClick={() => toggleExpand(uniqueId)}
                   style={{
                     background: 'transparent',
                     color: '#3b82f6',
@@ -117,6 +126,7 @@ const MentionsFeed = ({ mentions }) => {
                 </button>
               )}
 
+              {/* Footer */}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -156,7 +166,7 @@ const MentionsFeed = ({ mentions }) => {
                   >
                   {mention.source === 'Reddit' && 'View on Reddit →'}
                   {mention.source === 'Twitter' && 'View on Twitter →'}
-                  {mention.source.includes('News') && 'Read Article →'}
+                  {mention.source !== 'Reddit' && mention.source !== 'Twitter' && 'Read Article →'}
                 </a>
               )}
               </div>

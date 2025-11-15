@@ -1,108 +1,64 @@
 const axios = require("axios");
 const { franc } = require("franc-min");
 
-/* ------------------------------------------------------------------
-   SAFE LANGUAGE DETECTION
------------------------------------------------------------------- */
 const detectLanguage = (text) => {
-  if (!text || text.trim().length < 3) return "en"; // fallback
-
-  const detected = franc(text, { minLength: 3 });
-
+  const detected = franc(text);
   const map = {
     eng: "en",
-    fra: "fr",
     spa: "es",
+    fra: "fr",
     deu: "de",
-    ita: "it",
+    hin: "hi",
     por: "pt",
     rus: "ru",
     jpn: "ja",
     kor: "ko",
-    zho: "zh",
     ara: "ar",
-    hin: "hi",
-    und: "en"
+    und: "en",
   };
-
   return map[detected] || "en";
 };
 
-/* ------------------------------------------------------------------
-   FREE TRANSLATION API (MyMemory)
------------------------------------------------------------------- */
-const freeTranslateAPI = async (text, from, to = "en") => {
-  try {
-    const url = "https://api.mymemory.translated.net/get";
+const translateToEnglish = async (text) => {
+  const lang = detectLanguage(text);
 
-    const response = await axios.get(url, {
-      params: {
-        q: text,
-        langpair: `${from}|${to}`
-      }
+  if (lang === "en") {
+    return {
+      translatedText: text,
+      originalLanguage: "en",
+      wasTranslated: false,
+    };
+  }
+
+  try {
+    const res = await axios.post("https://libretranslate.de/translate", {
+      q: text,
+      source: lang,
+      target: "en",
+      format: "text",
     });
 
-    return response.data?.responseData?.translatedText || text;
-  } catch (err) {
-    console.error("MyMemory translation failed:", err.message);
-    return text;
-  }
-};
-
-/* ------------------------------------------------------------------
-   SIMPLE FALLBACK TRANSLATOR (offline)
------------------------------------------------------------------- */
-const simpleFallback = (text) => text; // safe fallback, no modification
-
-/* ------------------------------------------------------------------
-   TRANSLATE SINGLE TEXT
------------------------------------------------------------------- */
-const translateToEnglish = async (text) => {
-  try {
-    if (!text) {
-      return { translatedText: "", originalLanguage: "unknown", wasTranslated: false };
-    }
-
-    const lang = detectLanguage(text);
-
-    if (lang === "en") {
-      return { translatedText: text, originalLanguage: "en", wasTranslated: false };
-    }
-
-    // Try free API first
-    const translated = await freeTranslateAPI(text, lang, "en");
-
     return {
-      translatedText: translated,
+      translatedText: res.data.translatedText,
       originalLanguage: lang,
-      wasTranslated: translated !== text
+      wasTranslated: true,
     };
-
-  } catch (error) {
-    console.error("Translation Error:", error.message);
-
+  } catch (err) {
+    console.error("LibreTranslate Error:", err.message);
     return {
-      translatedText: simpleFallback(text),
-      originalLanguage: "unknown",
-      wasTranslated: false
+      translatedText: text,
+      originalLanguage: lang,
+      wasTranslated: false,
     };
   }
 };
 
-/* ------------------------------------------------------------------
-   BATCH TRANSLATION (SAFE)
------------------------------------------------------------------- */
 const translateBatch = async (texts) => {
-  const results = [];
-  for (const t of texts) {
-    const result = await translateToEnglish(t);
-    results.push(result);
-  }
-  return results;
+  return Promise.all(texts.map((t) => translateToEnglish(t)));
 };
 
 module.exports = {
   detectLanguage,
   translateToEnglish,
-  translateBatch
+  translateBatch,
 };

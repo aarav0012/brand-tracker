@@ -10,11 +10,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@huggingface/inference": "^4.13.3",
     "@vitalets/google-translate-api": "^9.2.1",
     "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "franc-min": "^6.2.0"
+    "franc-min": "^6.2.0",
+    "ml-kmeans": "^7.0.0",
+    "natural": "^8.1.0"
   }
 }

@@ -7,6 +7,7 @@ import { searchNews } from './services/newsAPI.js';
 import Header from './components/Header.jsx';
 import SearchBar from './components/SearchBar.jsx';
 import Alert from './components/Alert.jsx';
+import TopicClusters from './components/TopicClusters.jsx';
 import StatsCards from './components/StatsCards.jsx';
 import Charts from './components/Charts.jsx';
 import MentionsFeed from './components/MentionsFeed.jsx';
@@ -16,10 +17,14 @@ import './App.css';
 function App() {
   const [brandName, setBrandName] = useState('Nike');
   const [mentions, setMentions] = useState([]);
+  const [filteredMentions, setFilteredMentions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ positive: 0, neutral: 0, negative: 0, total: 0 });
   const [timelineData, setTimelineData] = useState([]);
   const [alertShown, setAlertShown] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [topicClusters, setTopicClusters] = useState([]);
+  const [clusteringLoading, setClusteringLoading] = useState(false);
 
   const analyzeMentionsSentiment = async (mentions) => {
     const sentimentPromises = mentions.map(async (mention) => {
@@ -38,6 +43,7 @@ function App() {
   const handleSearch = async() => {
     setLoading(true);
     setAlertShown(false);
+    setActiveFilter('all');
 
     try {
       const [redditPosts, tweets, newsArticles] = await Promise.all([
@@ -54,10 +60,11 @@ function App() {
 
       const mentionsWithSentiment = response.data;
 
-      mentionsWithSentiment.sort((a, b) => b.timestamp - a.timestamp);
+      mentionsWithSentiment.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
 
       setMentions(mentionsWithSentiment);
+      setFilteredMentions(mentionsWithSentiment);
       const positiveCount = mentionsWithSentiment.filter(m => m.sentiment === 'positive').length;
       const negativeCount = mentionsWithSentiment.filter(m => m.sentiment === 'negative').length;
       const neutralCount = mentionsWithSentiment.filter(m => m.sentiment === 'neutral').length;
@@ -74,6 +81,19 @@ function App() {
       if (negativeCount > mentionsWithSentiment.length * 0.25) {
         setAlertShown(true);
       }
+      if (mentionsWithSentiment.length > 0) {
+        setClusteringLoading(true);
+        try {
+          const clusterResponse = await axios.post('http://localhost:5000/api/topics/cluster', {
+            mentions: mentionsWithSentiment
+          });
+          setTopicClusters(clusterResponse.data);
+        } catch (clusterError) {
+          console.error('Clustering error:', clusterError);
+        } finally {
+          setClusteringLoading(false);
+        }
+      }
     } catch (error) {
       console.error('Error fetching Reddit data:', error);
       alert('Failed to fetch data from Reddit. Please try again later.');
@@ -82,6 +102,16 @@ function App() {
     }
   };
 
+   const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    
+    if (filter === 'all') {
+      setFilteredMentions(mentions);
+    } else {
+      const filtered = mentions.filter(m => m.sentiment === filter);
+      setFilteredMentions(filtered);
+    }
+  };
   useEffect(() => {
     handleSearch();
     // eslint-disable-next-line
@@ -104,9 +134,54 @@ function App() {
           loading={loading}
         />
         <Alert show={alertShown} />
-        <StatsCards stats={stats} />
+        <StatsCards 
+          stats={stats} 
+          activeFilter={activeFilter}
+          onFilterChange={handleFilterChange}
+        />
+        {activeFilter !== 'all' && (
+          <div style={{
+            background: '#1e293b',
+            padding: '15px 25px',
+            borderRadius: '12px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+          }}>
+            <div>
+              <span style={{ color: '#94a3b8' }}>Showing: </span>
+              <span style={{ 
+                color: activeFilter === 'positive' ? '#10b981' : activeFilter === 'negative' ? '#ef4444' : '#6b7280',
+                fontWeight: 'bold',
+                textTransform: 'capitalize'
+              }}>
+                {activeFilter} Mentions ({filteredMentions.length})
+              </span>
+            </div>
+            <button
+              onClick={() => handleFilterChange('all')}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                padding: '8px 20px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Clear Filter
+            </button>
+          </div>
+        )}
         <Charts timelineData={timelineData} pieData={pieData} />
-        <MentionsFeed mentions={mentions} />
+        <TopicClusters 
+          clusters={topicClusters} 
+          loading={clusteringLoading}
+        />
+        <MentionsFeed mentions={filteredMentions} />
       </div>
     </div>
   );
