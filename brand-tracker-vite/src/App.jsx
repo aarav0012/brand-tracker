@@ -36,6 +36,8 @@ function App() {
     News: true
   });
 
+  const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const handleSearch = async () => {
     setLoading(true);
     setAlertShown(false);
@@ -50,7 +52,7 @@ function App() {
       
       const allMentions = [...redditPosts, ...tweets, ...newsArticles];
       
-      const response = await axios.post('http://localhost:5000/api/analysis/analyze-mentions', {
+      const response = await axios.post(`${BACKEND_URL}/api/analysis/analyze-mentions`, {
         mentions: allMentions
       });
       
@@ -81,7 +83,7 @@ function App() {
       if (mentionsWithSentiment.length > 0) {
         setClusteringLoading(true);
         try {
-          const clusterResponse = await axios.post('http://localhost:5000/api/topics/cluster', {
+          const clusterResponse = await axios.post(`${BACKEND_URL}/api/topics/cluster`, {
             mentions: mentionsWithSentiment
           });
           setTopicClusters(clusterResponse.data);
@@ -95,7 +97,7 @@ function App() {
       if (mentionsWithSentiment.length > 0) {
         setSpikeLoading(true);
         try {
-          const spikeResponse = await axios.post('http://localhost:5000/api/spikes/detect', {
+          const spikeResponse = await axios.post(`${BACKEND_URL}/api/spikes/detect`, {
             mentions: mentionsWithSentiment
           });
           setSpikeData(spikeResponse.data);
