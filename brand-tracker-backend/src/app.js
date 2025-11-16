@@ -17,7 +17,10 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Middleware
-app.use(cors({ origin: config.corsOrigin }));
+app.use(cors({
+  origin: config.nodeEnv === 'production' ? '*' : config.corsOrigin,
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
