@@ -1,5 +1,6 @@
 const natural = require('natural');
 const { kmeans } = require('ml-kmeans');
+const { extractTokens, getWordFrequency, getTopWords } = require('../utils/textProcessing');
 
 // TF-IDF for text vectorization (no API needed!)
 const TfIdf = natural.TfIdf;
@@ -33,54 +34,9 @@ const generateLocalEmbeddings = (texts) => {
 
 // Extract keywords from cluster
 const extractKeywords = (texts, topN = 5) => {
-  const tfidf = new TfIdf();
-  
-  // Comprehensive stop words
-  const stopWords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'is', 'are', 'was', 'were', 'been', 'be', 'have', 'has',
-    'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may',
-    'might', 'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he',
-    'she', 'it', 'we', 'they', 'my', 'your', 'his', 'her', 'its', 'our',
-    'their', 'just', 'about', 'even', 'also', 'really', 'very', 'much',
-    'more', 'most', 'some', 'any', 'all', 'both', 'each', 'few', 'other',
-    'such', 'only', 'own', 'same', 'so', 'than', 'too', 'from', 'up', 'down',
-    'out', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here',
-    'there', 'when', 'where', 'why', 'how', 'who', 'what', 'which', 'not',
-    'no', 'nor', 'as', 'into', 'through', 'during', 'before', 'after', 'above',
-    'below', 'between', 'because', 'while', 'until', 'since', 'apple', 'watch',
-    'get', 'got', 'getting', 'make', 'makes', 'made', 'goes', 'going', 'went',
-    'come', 'comes', 'came', 'coming', 'take', 'takes', 'took', 'taking',
-    'see', 'sees', 'saw', 'seen', 'know', 'knows', 'knew', 'known', 'think',
-    'thinks', 'thought', 'tell', 'tells', 'told', 'feel', 'feels', 'felt',
-    'try', 'tried', 'trying', 'work', 'works', 'worked', 'working', 'give',
-    'gives', 'gave', 'given', 'find', 'finds', 'found', 'use', 'uses', 'used',
-    'using', 'seem', 'seems', 'seemed', 'like', 'likes', 'liked', 'look',
-    'looks', 'looked', 'looking', 'say', 'says', 'said', 'saying', 'new',
-    'first', 'last', 'long', 'good', 'little', 'old', 'right', 'big', 'high',
-    'different', 'small', 'large', 'next', 'early', 'young', 'important',
-    'public', 'bad', 'able', 'reddit', 'twitter', 'post', 'posts', 'comment',
-    'comments', 'via', 'http', 'https', 'www', 'com', 'org', 'net'
-  ]);
-  
-  const combinedText = texts.join(' ').toLowerCase();
-  tfidf.addDocument(combinedText);
-  
-  const terms = [];
-  tfidf.listTerms(0).forEach(item => {
-    const term = item.term;
-    // Strict filtering: length > 4, not stop word, not number, not URL-like
-    if (term.length > 4 && 
-        !stopWords.has(term) && 
-        isNaN(term) &&
-        !term.includes('http') &&
-        !term.includes('.com') &&
-        /^[a-z]+$/.test(term)) { // Only alphabetic characters
-      terms.push(term);
-    }
-  });
-  
-  return terms.slice(0, topN);
+  const frequency = getWordFrequency(texts);
+  const topWords = getTopWords(frequency, topN);
+  return topWords.map(({ word }) => word);
 };
 
 // Label cluster based on keywords and patterns

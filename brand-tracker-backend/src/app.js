@@ -9,6 +9,7 @@ const translationRoutes = require('./routes/translationRoutes');
 const sentimentRoutes = require('./routes/sentimentRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
 const topicRoutes = require('./routes/topicRoutes');
+const spikeRoutes = require('./routes/spikeRoutes');
 
 const app = express();
 
@@ -27,7 +28,7 @@ app.use('/api/sentiment', sentimentRoutes);
 app.use('/api/translation', translationRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/topics', topicRoutes);
-
+app.use('/api/spikes', spikeRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'Backend is running!' });
