@@ -429,6 +429,12 @@ This project was built for the **RapidQuest Hackathon 2024** - Brand Mention & R
 - [ ] WebSocket for real-time updates
 - [ ] Advanced analytics with BigQuery
 
+## 🚀 Live Demo
+
+**Frontend**: https://brand-tracker-topaz.vercel.app
+**Backend API**: https://brand-tracker-12yt.onrender.com
+
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
